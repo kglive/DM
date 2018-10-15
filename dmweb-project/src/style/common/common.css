@@ -1,0 +1,46 @@
+/**
+ * Created By yk
+ * User: 1039458625@qq.com
+ * Date: 2018/9/29
+ * Time: 23:46
+ * 功能样式
+ */
+
+/*内容区域头部选项卡和搜索工具栏 start*/
+#content .con-top-bar, #content .search-tools {
+  height: 50px;
+  line-height: 50px;
+  background-color: #fff;
+  color: rgb(50,50,50);
+  font-size: 14px;
+  border-top: 1px solid rgb(224,224,224);
+  margin-bottom: 5px;
+}
+#content .con-top-bar .nav-bar-item{
+  padding: 0 20px;
+  cursor: pointer;
+  height: 48px;
+  display: inline-block;
+  border-bottom: 2px solid transparent;
+}
+#content .con-top-bar .nav-bar-item.active {
+  border-bottom: 2px solid rgb(84, 92, 100);
+  /*color: #ffd04b;*/
+}
+#content .search-tools {
+  padding: 0 10px;
+}
+#content .search-tools .tool-item {
+  float: left;
+  margin: 0 10px;
+}
+
+/*内容区域头部选项卡和搜索工具栏 end*/
+
+/*内容区域-wrap start*/
+#content div[class$='-wrap'] {
+  background-color: #fff;
+  padding: 10px;
+  box-sizing: border-box;
+}
+/*内容区域-wrap end*/
