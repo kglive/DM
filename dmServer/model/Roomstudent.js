@@ -35,6 +35,28 @@ const RoomstudentModel = {
         }
       });
     });
+  },
+  /*
+  * 获取课堂中的班级中的人数（该班级在该课堂中的人数，并非班级总人数）
+  * params {
+  *   classid: '',
+  *   classroomid: ''
+  * }
+  * return {
+  *   classid: '',
+  *   number:
+  * }
+  * */
+  getNumberByClassidInClassroom (params) {
+    return new Promise((resolve, reject) => {
+      myQuery('select count(*) from `dm_roomstudent` where `classid`=? and `classroomid`=? and `status`=?', [params.classid, params.classroomid, 0], (err, data) => {
+        if (err) {
+          reject(err.message);
+        } else {
+          resolve({classid: params.classid, classroomid: params.classroomid, number: data[0]['count(*)']});
+        }
+      });
+    });
   }
 };
 

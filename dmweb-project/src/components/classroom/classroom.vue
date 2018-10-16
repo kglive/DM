@@ -17,7 +17,7 @@
           </a>
           <p class="name">{{ item.name }}</p>
           <p class="opa">
-            <span class="number"><i class="el-icon-bell"></i> {{ item.number }}</span>
+            <span class="number"><i class="el-icon-bell"></i> {{ item | computedNumber }}</span>
             <span class="period"><i class="el-icon-time"></i> {{ item.period }}</span>
           </p>
           <div class="actions">
@@ -25,7 +25,7 @@
               <p><i class="el-icon-setting"></i></p>
               <ul>
                 <li @click="editClassroom(item.id)" title="编辑课堂"><i class="el-icon-edit"></i></li>
-                <li @click="addStudentToClassroom(item.id)" title="添加学生"><i class="el-icon-plus"></i></li>
+                <li @click="addStudentToClassroom(item)" title="添加学生"><i class="el-icon-plus"></i></li>
               </ul>
             </div>
           </div>
@@ -87,7 +87,7 @@
     <el-dialog id="addStuToC-dialog" :title="addStuToClassroom.title" :visible.sync="addStuToClassroom.dialogFormVisible" width="80%">
       <div class="sel-class-btn">
         <el-select size="small" @change="handleGetStuByClassid" v-model="addStuToClassroom.addTags.classid" placeholder="请选择班级">
-          <el-option v-for="item in addClassroom.classList" :key="item.id" :label="item.name" :value="item.id"></el-option>
+          <el-option v-for="item in addStuToClassroom.classList" :key="item.id" :label="item.name" :value="item.id"></el-option>
         </el-select>
         <el-tag v-if="addStuToClassroom.addTags.classid" type="success"> {{transformToName}} - ( {{addStuToClassroom.addTags.selectValues.length}} )</el-tag>
       </div>
@@ -169,7 +169,7 @@
               { required: true, message: '请输入课堂编号', trigger: 'blur' }
             ],
             period: [
-              { validator: checkPeriod, trigger: 'blur' }
+              { required: true, validator: checkPeriod, trigger: 'blur' }
             ],
             daterange: [
               { required: true, message: '请选择课堂开课日期段', trigger: 'change' }
@@ -190,6 +190,7 @@
           dataList: [],
           loading: false,
           classroomid: '',
+          classList: [],
           addTags: {
             classid: '',
             selectValues: []
@@ -207,6 +208,7 @@
         vxTeacherList: state => state.classroom.allTeacherList,
         vxClassesList: state => state.classroom.allClassesList
       }),
+      // 班级 id 转换班级名称
       transformToName () {
         let filterResult = this.addClassroom.classList.filter(item => item.id === this.addStuToClassroom.addTags.classid);
         console.log(filterResult);
@@ -256,7 +258,7 @@
             let resData = response.data;
             if (resData.status == 0) {
               this.addClassroom.classList = resData.data;
-              this.setClassesList = resData.data;
+              this.setClassesList(resData.data);
             } else {
               this.$message({type: 'warning', message: resData.message});
             }
@@ -291,6 +293,7 @@
         this.loading = true;
         this.$http.get('/api/classroom/getAllClassroom').then(response => {
           this.loading = false;
+          console.log('获取课堂列表', response);
           let resData = response.data;
           if (resData.status == 0) {
             this.classroomList = resData.data.list;
@@ -307,8 +310,15 @@
 
       },
       // 往课堂里面添加学生
-      addStudentToClassroom (classroomid) {
-        this.addStuToClassroom.classroomid = classroomid;
+      addStudentToClassroom (classroom) {
+        this.addStuToClassroom.classroomid = classroom.id;
+        this.addStuToClassroom.classList = this.vxClassesList.filter(item => {
+          for (let i = 0, id; id = classroom.classid[i]; i++) {
+            if (id === item.id) {
+              return item;
+            }
+          }
+        });
         this.addStuToClassroom.dialogFormVisible = true;
       },
       // 添加学生的穿梭框 change 事件
@@ -384,9 +394,13 @@
       }
     },
     filters: {
-      transformToName (val) {
-        let filterResult = this.addClassroom.classList.filter(item => item.id === val);
-        return filterResult[0]['name'];
+      // 计算课堂总人数
+      computedNumber (classroom) {
+        let total = 0;
+        for (let i = 0, item; item = classroom.classList[i]; i++) {
+          total += item.number;
+        }
+        return total;
       }
     }
   }

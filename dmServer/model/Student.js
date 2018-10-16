@@ -101,9 +101,12 @@ const StudentModel = {
     });
   },
   /*
-  * 根据班级id获取班级下的人数
+  * 根据班级id获取班级下的所有的人数
   * params classid
-  * return Promise(Number(num));
+  * return Promise({
+  *   classid: '',
+  *   number:
+  * });
   * */
   getNumberByClassid (classid) {
     return new Promise((resolve, reject) => {
@@ -111,7 +114,7 @@ const StudentModel = {
         if (err) {
           reject(err.message);
         } else {
-          resolve(data[0]['count(*)']);
+          resolve({classid: classid, number: data[0]['count(*)']});
         }
       });
     });

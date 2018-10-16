@@ -13,7 +13,7 @@ const { flattenArr, uniqueArr } = require('../module/tools');
 const { getNumberByClassid } = require('./Student');
 const { getTeacherById } = require('./Teacher');
 const { getClassById } = require('./Classes');
-const { getStuInClassroom } = require('./Roomstudent');
+const { getStuInClassroom, getNumberByClassidInClassroom } = require('./Roomstudent');
 
 const ClassroomModel = {
   /*
@@ -71,30 +71,54 @@ const ClassroomModel = {
         if (err) {
           reject(err.message);
         } else {
-          let allClassidList = uniqueArr(flattenArr(data.map(item => {
-            return item['classid'].split(',');
-          })));
-          // TODO
-          for (let i = 0, item; item = allClassidList[i]; i++) {
-            getNumberByClassid(item).then(num => {
-              allClassidList[i] = {classid: item, number: num};
-              // console.log('allClassidList', allClassidList);
-            }).catch(error => {
-              reject(error);
+          let allClassidList = flattenArr(data.map(item => {
+            let classids = item['classid'].split(',');
+            return classids.map(id => {
+              return {
+                classroomid: item.id,
+                classid: id
+              }
             });
+          }));
+          let promiseList = [];
+          for (let i = 0, item; item = allClassidList[i]; i++) {
+            promiseList.push(getNumberByClassidInClassroom(item));
           }
-          // TODO 处理老师信息
           let allTeacheridList = uniqueArr(flattenArr(data.map(item => {
             return item['teacherid'].split(',');
           })));
-          let resultList = data.map(item => {
-            item.picture = `http://${serverHost}:${serverPort}${item.picture}`;
-            item.classid = item.classid.split(',');
-            item.teacherid = item.teacherid.split(',');
-            item.number = 0;
-            return item;
+          for (let i = 0, item; item = allTeacheridList[i]; i++) {
+            promiseList.push(getTeacherById(item));
+          }
+          Promise.all(promiseList).then(detalis => {
+            let classAll = detalis.slice(0, allClassidList.length);
+            let teacherAll = flattenArr(detalis.slice(allClassidList.length, allClassidList.length+allTeacheridList.length));
+            let result = data.map(item => {
+              // 选班级
+              let classL = item.classid = item['classid'].split(',');
+              let teacherL = item.teacherid = item['teacherid'].split(',');
+              item.classList = classL.map(id => {
+                for (let i = 0, obj; obj = classAll[i]; i++) {
+                  if (obj.classid === id && obj.classroomid === item.id) {
+                    return obj;
+                  }
+                }
+              });
+              // 老师
+              item.teacherList = teacherL.map(id => {
+                for (let i = 0, obj; obj = teacherAll[i]; i++) {
+                  if (obj.id === id) {
+                    return obj;
+                  }
+                }
+              });
+              item.picture = `http://${serverHost}:${serverPort}${item.picture}`;
+              return item;
+            });
+            resolve(result);
+          }).catch(error => {
+            reject(error);
           });
-          resolve(resultList);
         }
       });
     });
