@@ -26,6 +26,7 @@
               <ul>
                 <li @click="editClassroom(item.id)" title="编辑课堂"><i class="el-icon-edit"></i></li>
                 <li @click="addStudentToClassroom(item)" title="添加学生"><i class="el-icon-plus"></i></li>
+                <li @click="addHandleAttendance(item)" title="新建考勤"><i class="el-icon-time"></i></li>
               </ul>
             </div>
           </div>
@@ -67,7 +68,7 @@
         <el-form-item class="avatar-item" label="封面" :label-width="addClassroom.formLabelWidth">
           <el-upload
             class="avatar-uploader"
-            action="http://localhost:3000/api/gravatar"
+            :action="addClassroom.avatar.action"
             :headers="addClassroom.avatar.headers"
             :name="addClassroom.avatar.field"
             :show-file-list="false"
@@ -116,11 +117,56 @@
         <el-button type="primary" @click="submitAddStuToClassroom">确 定</el-button>
       </div>
     </el-dialog>
+    <!--添加考勤任务-->
+    <el-dialog title="新增考勤任务" :visible.sync="addAttendance.dialogFormVisible" width="50%">
+      <el-form ref="addAttendanceForm" :rules="addAttendance.rules" status-icon :model="addAttendance.attendanceForm">
+        <el-form-item label="考勤任务名称" :label-width="addAttendance.formLabelWidth" prop="name">
+          <el-input placeholder="请输入此次考勤任务名称" v-model="addAttendance.attendanceForm.name" autocomplete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="考勤老师" :label-width="addAttendance.formLabelWidth" prop="teacherid">
+          <el-select v-model="addAttendance.attendanceForm.teacherid" placeholder="请选择考勤老师">
+            <el-option v-for="(item, index) in addAttendance.teacherList" :key="index" :label="item.name" :value="item.id"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="考勤时间" :label-width="addAttendance.formLabelWidth" required>
+          <el-col :span="11">
+            <el-form-item prop="starttime">
+              <el-time-select
+                placeholder="起始时间"
+                v-model="addAttendance.attendanceForm.starttime"
+                :picker-options="{ start: '06:30', step: '00:15', end: '22:30' }">
+              </el-time-select>
+            </el-form-item>
+          </el-col>
+          <!--<el-col class="line" :span="2">-</el-col>-->
+          <el-col :span="11">
+            <el-form-item prop="endtime">
+              <el-time-select
+                placeholder="结束时间"
+                v-model="addAttendance.attendanceForm.endtime"
+                :picker-options="{ start: '06:30', step: '00:15', end: '22:30', minTime: addAttendance.attendanceForm.starttime }">
+              </el-time-select>
+            </el-form-item>
+          </el-col>
+        </el-form-item>
+        <el-form-item label="考勤任务简述" :label-width="addAttendance.formLabelWidth">
+          <el-input placeholder="请对此次考勤任务进行描述，方便以后查询搜索" type="textarea" v-model="addAttendance.attendanceForm.description" autocomplete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="考勤任务备注" :label-width="addAttendance.formLabelWidth">
+          <el-input placeholder="此次考勤任务的备注" v-model="addAttendance.attendanceForm.remark" autocomplete="off"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="addAttendance.dialogFormVisible = false">取 消</el-button>
+        <el-button type="primary" @click="submitAddAttendance('addAttendanceForm')">确 定</el-button>
+      </div>
+    </el-dialog>
   </section>
 </template>
 
 <script>
   import { mapState, mapMutations } from 'vuex';
+  import { requestUrl } from '../../config/config';
   export default {
     data () {
       let checkPeriod = (rule, value, callback) => {
@@ -156,6 +202,7 @@
             daterange: []
           },
           avatar: {
+            action: `${requestUrl}/api/gravatar`,
             headers: { Authorization: window.localStorage.getItem('token') },
             field: this.Const.onlyOneFileField,
             imgUrl: '',
@@ -195,6 +242,35 @@
             classid: '',
             selectValues: []
           }
+        },
+        // 添加考勤任务
+        addAttendance: {
+          dialogFormVisible: false,
+          formLabelWidth: '120px',
+          attendanceForm: {
+            name: '',
+            classroomid: '',
+            starttime: '',
+            endtime: '',
+            teacherid: '',
+            description: '',
+            remark: ''
+          },
+          teacherList: [],
+          rules: {
+            name: [
+              { required: true, message: '请输入此次考勤任务名称', trigger: 'blur' }
+            ],
+            teacherid: [
+              { required: true, message: '请选择考勤老师', trigger: 'change' }
+            ],
+            starttime: [
+              { required: true, message: '请选择起始时间', trigger: 'change' }
+            ],
+            endtime: [
+              { required: true, message: '请选择结束时间', trigger: 'change' }
+            ]
+          }
         }
       }
     },
@@ -211,7 +287,6 @@
       // 班级 id 转换班级名称
       transformToName () {
         let filterResult = this.addClassroom.classList.filter(item => item.id === this.addStuToClassroom.addTags.classid);
-        console.log(filterResult);
         return filterResult[0]['name'];
       }
     },
@@ -390,6 +465,38 @@
         }).catch(error => {
           loading.close();
           this.$message({type: 'error', message: error.message});
+        });
+      },
+      // 新建考勤任务
+      addHandleAttendance (obj) {
+        console.log('addAttendance', obj);
+        this.addAttendance.teacherList = obj.teacherList;
+        this.addAttendance.attendanceForm.classroomid = obj.id;
+        this.addAttendance.dialogFormVisible = true;
+      },
+      submitAddAttendance (formName) {
+        let This = this;
+        this.$refs[formName].validate((valid) => {
+          if (valid) {
+            this.$http.post('/api/attendance/addAttendance', this.addAttendance.attendanceForm).then(response => {
+              let resData = response.data;
+              if (resData.status === 0) {
+                let msg = `请在 ${resData.data.starttime} ~ ${resData.data.endtime} 时间段完成 '${resData.data.name}' 的考勤任务`;
+                this.$alert(msg, ' 考勤任务新建成功', {
+                  confirmButtonText: '知道了',
+                  type: 'success',
+                  center: true,
+                  callback: action => {
+                    This.addAttendance.dialogFormVisible = false;
+                  }
+                });
+              } else {
+                this.$message({type: 'info', message: resData.message || '新建失败！'});
+              }
+            }).catch(error => {
+              this.$message({type: 'error', message: '新建失败！'+error.message});
+            });
+          } else { return false; }
         });
       }
     },

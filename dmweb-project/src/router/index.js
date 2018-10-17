@@ -24,6 +24,7 @@ import mainindex from '@/components/main/index';
 * other 模块路由
 * */
 import acgclud from '@/components/other/acgclud';
+import mdeditor from '@/components/other/mdeditor';
 
 
 Vue.use(Router);
@@ -44,6 +45,7 @@ export default new Router({
         * other 模块路由
         * */
         { path: 'acgclud', name: 'acgclud', component: acgclud },
+        { path: 'mdeditor', name: 'mdeditor', component: mdeditor },
       ]
     }
   ]

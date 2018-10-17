@@ -8,6 +8,7 @@
 
 const myQuery = require('../module/mysql');
 const { getStudentInfoByid } = require('./Student');
+const { getClassById } = require('./Classes');
 const { flattenArr } = require('../module/tools');
 
 const RoomstudentModel = {
@@ -53,7 +54,18 @@ const RoomstudentModel = {
         if (err) {
           reject(err.message);
         } else {
-          resolve({classid: params.classid, classroomid: params.classroomid, number: data[0]['count(*)']});
+          getClassById(params.classid).then(classdata => {
+            // console.log('classdata', classdata[0]);
+            resolve({
+              name: classdata[0].name,
+              code: classdata[0].code,
+              classid: params.classid,
+              classroomid: params.classroomid,
+              number: data[0]['count(*)']
+            });
+          }).catch(error => {
+            reject(error);
+          });
         }
       });
     });

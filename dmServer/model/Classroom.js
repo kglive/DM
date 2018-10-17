@@ -92,6 +92,7 @@ const ClassroomModel = {
           }
           Promise.all(promiseList).then(detalis => {
             let classAll = detalis.slice(0, allClassidList.length);
+            // console.log('classAll', classAll);
             let teacherAll = flattenArr(detalis.slice(allClassidList.length, allClassidList.length+allTeacheridList.length));
             let result = data.map(item => {
               // 选班级

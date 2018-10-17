@@ -11,6 +11,7 @@ const path = require('path');
 const router = express.Router();
 const rootPath = path.join(__dirname,'../');
 const { serverHost, serverPort } = require('../config');
+const { getNowFormatDate } = require('../module/tools');
 
 
 
@@ -243,6 +244,43 @@ router.get('/classroom/getTCByClassroom', (req, res, next) => {
 });
 
 
+const AttendanceModel = require('../model/Attendance');
+/*
+* 新建考勤任务
+* params = {
+*   name: '',
+*   classroomid: '',
+*   starttime: '06:15',
+*   endtime: '07:00',
+*   teacherid: '',
+*   description: '',
+*   remark: ''
+* }
+* */
+router.post('/attendance/addAttendance', (req, res, next) => {
+  let params = {
+    name: req.body.name,
+    classroomid: req.body.classroomid,
+    starttime: (_ => {
+      let datatime = `${getNowFormatDate()} ${req.body.starttime}:00`;
+      return new Date(datatime).getTime();
+    })(),
+    endtime: (_ => {
+      let datatime = `${getNowFormatDate()} ${req.body.endtime}:00`;
+      return new Date(datatime).getTime();
+    })(),
+    teacherid: req.body.teacherid,
+    description: req.body.description,
+    remark: req.body.remark
+  };
+  console.log(params);
+  AttendanceModel.addAttendance(params).then(data => {
+    res.json({status: 0, data: data, message: '新建考勤任务成功'});
+  }).catch(error => {
+    res.json({status: 1, data: '', message: '新建考勤任务失败'+error});
+  });
+});
+
 
 
 
@@ -267,7 +305,8 @@ router.post('/gravatar', uploadMiddleware, (req, res) => {
   // D:\wwwjwt\DM\dmServer\
   // D:\wwwjwt\DM\dmServer\public\uploads\avataor\1538927195105_1_03.PNG
   let path = file.path.replace(rootPath, '/');
-  res.json({status: 0, message: '上传成功！', data: {path: path, url: `http://${serverHost}:${serverPort}${path}`}});
+  let url = `http://${serverHost}:${serverPort}${path}`.replace('\\', '\/');
+  res.json({status: 0, message: '上传成功！', data: {path: path, url: `http://${serverHost}:${serverPort}${path}`.replace('\\', '\/')}});
 });
 // 多图
 router.post('/gallery', uploadMiddleware, (req, res) => {

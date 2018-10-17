@@ -49,7 +49,7 @@
       </div>
       <div class="right-detail">
         <div v-if="showCurrentStudent" class="stu-detail">
-          <img :src="showCurrentStudent.gravatar" :alt="showCurrentStudent.name">
+          <img :src="showCurrentStudent.gravatar" width="200" height="300" :alt="showCurrentStudent.name">
         </div>
         <div v-else class="other-adv">
           nothing
@@ -103,7 +103,7 @@
             <el-form-item class="avatar-item" label="照片" :label-width="addstudent.formLabelWidth">
               <el-upload
                 class="avatar-uploader"
-                action="http://localhost:3000/api/gravatar"
+                :action="addstudent.avatar.action"
                 :headers="addstudent.avatar.headers"
                 :name="addstudent.avatar.field"
                 :show-file-list="false"
@@ -132,6 +132,7 @@
 </template>
 
 <script>
+  import { requestUrl } from '../../config/config';
   export default {
     data () {
       return {
@@ -173,6 +174,7 @@
           },
           formLabelWidth: '100px',
           avatar: {
+            action: `${requestUrl}/api/gravatar`,
             headers: { Authorization: window.localStorage.getItem('token') },
             field: this.Const.onlyOneFileField,
             imgUrl: '',
@@ -362,12 +364,12 @@
           }
         }).then(response => {
           this.loading = false;
-          console.log('student list', response);
+          // console.log('student list', response);
           let resData = response.data;
           if (resData.status == 0) {
             this.page.total = resData.data.total;
             this.studentList = resData.data.list;
-            this.$message({type: 'success', message: resData.message || '获取学生列表成功！'});
+            // this.$message({type: 'success', message: resData.message || '获取学生列表成功！'});
           } else {
             this.$message({type: 'warning', message: resData.message || '获取学生列表失败！'});
           }

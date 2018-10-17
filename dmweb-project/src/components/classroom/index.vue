@@ -12,13 +12,18 @@
         </el-select>
       </div>
       <div class="tool-item">
-        <el-select :disabled="!classesList.length" v-model="search.classesid" size="small" placeholder="请选择班级">
+        <el-select :disabled="!classesList.length" @change="handleSelClassChange" v-model="search.classesid" size="small" placeholder="请选择班级">
           <el-option v-for="item in classesList" :key="item.id" :label="item.name" :value="item.id"></el-option>
         </el-select>
       </div>
-      <div class="tool-item">
+      <!--<div class="tool-item">
+        <el-select :disabled="!classesList.length" @change="handleSelClassChange" v-model="search.classesid" size="small" placeholder="请选择班级">
+          <el-option v-for="item in classesList" :key="item.id" :label="item.name" :value="item.id"></el-option>
+        </el-select>
+      </div>-->
+      <!--<div class="tool-item">
         <el-button type="success" size="small" icon="el-icon-search"></el-button>
-      </div>
+      </div>-->
       <div class="tool-item fr">
         <el-button title="添加课堂" size="small" type="success" icon="el-icon-plus" circle></el-button>
       </div>
@@ -30,7 +35,26 @@
     </div>
     <div id="dianming-wrap">
       <div class="tables">
-        <div class="left-table">{{ vxNopasslist }}</div>
+        <div class="left-table">
+          <el-table
+            highlight-current-row
+            :row-class-name="tableRowClassName"
+            :data="studentPrevList"
+            @current-change="handleTableCurrentChange"
+            style="width: 100%" max-height="500">
+            <el-table-column fixed type="index" width="40"></el-table-column>
+            <el-table-column fixed prop="code" label="Student ID" width="100"></el-table-column>
+            <el-table-column prop="name" label="Name" width="100"></el-table-column>
+            <el-table-column prop="sex" label="Sex" width="50"></el-table-column>
+            <el-table-column prop="phone" label="Phone" width="120"></el-table-column>
+            <el-table-column prop="qq" label="QQ" width="100"></el-table-column>
+            <el-table-column fixed="right" label="操作" width="120">
+              <template slot-scope="scope">
+                <el-button @click.native.prevent="deleteRow(scope.$index, studentPrevList)" type="text" size="small">移除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
         <div class="right-detail">
           <div class="stu-msg"></div>
           <div class="analyze-map"></div>
@@ -88,6 +112,10 @@
           classroomid: '',
           classesid: ''
         },
+        // 当前预览的学生
+        currentStuView: {
+          student: null
+        },
         // 课堂列表
         classroomList: [],
         // 当前课堂中的班级列表
@@ -96,6 +124,9 @@
         teacherList: [],
         // 课堂学生列表
         studentList: [],
+        // 班级预览的学生列表
+        studentPrevList: [],
+        // 点名数据
         attendance: {
           title: '点名',
           dialogFormVisible: false,
@@ -129,6 +160,10 @@
       ...mapMutations('rollcall', [
         'setClassroom'
       ]),
+      // 班级选择改变
+      handleSelClassChange (val) {
+        this.studentPrevList = this.studentList.filter(item => item.classid === val);
+      },
       // 选择课堂改变 change 事件
       handleSelClassroomChange (val) {
         this.$http.get('/api/classroom/getTCByClassroom', {
@@ -136,6 +171,9 @@
         }).then(response => {
           let resData = response.data;
           if (resData.status == 0) {
+            // 初始化选项
+            this.search.classesid = '';
+            this.search.teacherid = '';
             this.classesList = resData.data.classList;
             this.teacherList = resData.data.teacherList;
             this.studentList = resData.data.studentList.map(item => {
@@ -163,6 +201,19 @@
         }).catch(error => {
           this.$message({type: 'error', message: error.message});
         });
+      },
+      // 格式化带状态的表格
+      tableRowClassName ({row}) {
+        return (row.attendanceStatus == 1 && row.attendanceValue != 0) ? 'warning-row' : '';
+      },
+      // 表格删除
+      deleteRow (index, rows) {
+        console.log(index, rows);
+      },
+      // 表格选中
+      handleTableCurrentChange (currentRow, oldCurrentRow) {
+        console.log('handleTableCurrentChange', currentRow, oldCurrentRow);
+        this.currentStuView.student = currentRow;
       },
       // 开始点名
       startAttendance () {
@@ -334,5 +385,11 @@
       margin: 50px 0 10px;
     }
   }
+}
+.el-table .warning-row {
+  background: rgba(245,108,108,.3);
+}
+.el-table .success-row {
+  background: rgba(103,194,58,.3);
 }
 </style>

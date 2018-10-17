@@ -22,9 +22,8 @@ let getNowFormatDate = function () {
   if (strDate >= 0 && strDate <= 9) {
     strDate = "0" + strDate;
   }
-  let currentdate = date.getFullYear().toString() + month.toString() + strDate.toString();
-  return currentdate;
-}
+  return date.getFullYear().toString() + month.toString() + strDate.toString();
+};
 // 创建目录，目录要一层一层创建
 let createFolder = folder => {
   try {

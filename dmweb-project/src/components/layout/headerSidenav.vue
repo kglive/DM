@@ -61,7 +61,7 @@
             menu: [
               {
                 id: '1.1',
-                name: '点名',
+                name: '考勤',
                 code: 'dianmin',
                 url: '/index/dianming'
               },{
@@ -93,6 +93,11 @@
                 name: 'AcgClud',
                 code: 'acgclud',
                 url: '/index/acgclud'
+              },{
+                id: '9.2',
+                name: 'Markdown',
+                code: 'mdeditor',
+                url: '/index/mdeditor'
               }
             ]
           }
