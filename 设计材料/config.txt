@@ -1,0 +1,9 @@
+自动监听文件变化
+
+webpack中可以利用webpack-dev-server在localhost:8080端口启动一个express静态资源web服务器，并且默认以监听模式自动运行webpack,实时监听文件的变化；
+
+首先安装：npm install webpack-dev-server -g
+
+然后运行：webpack-dev-server --progress --colors  
+
+注：--progress 显示编译进度条  --colors带颜色的进度条

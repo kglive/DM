@@ -21,6 +21,7 @@ const requestError = require('./middleware/requestError');
 const indexRouter = require('./router/index');
 const userRouter = require('./router/user');
 const apiRouter = require('./router/api');
+const reqRouter = require('./router/request');
 
 
 // 跨域配置
@@ -46,12 +47,17 @@ app.use('/public', express.static('public'));
 
 
 console.log('start');
-app.use(removeOptions, requestError);
+app.use(removeOptions);
 app.use('/', indexRouter);
 // 用户处理
 app.use('/user', userRouter);
 // 数据处理并做身份token核验
 app.use('/api', requireAuthentication, requestLogger, apiRouter);
+app.use('/req', requireAuthentication, requestLogger, reqRouter);
+app.get('/err', (req, res, next) => {
+  throw new Error("BROKEN"); // Express will catch this on its own
+});
+app.use(requestError);
 
 
 

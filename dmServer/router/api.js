@@ -282,6 +282,15 @@ router.post('/attendance/addAttendance', (req, res, next) => {
 });
 
 
+const CallResultModel = require('../model/CallResult');
+/* 课堂点名 call_result */
+router.post('/callresult/add', (req, res, next) => {
+  CallResultModel.addCallResult(req.body.list).then(() => {
+    res.json({status: 0, data: '', message: '考勤成功'});
+  }).catch(error => {
+    res.json({status: 1, data: '', message: '添加考勤名单失败'+error});
+  });
+});
 
 
 

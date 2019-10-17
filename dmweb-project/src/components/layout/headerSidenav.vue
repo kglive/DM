@@ -98,6 +98,16 @@
                 name: 'Markdown',
                 code: 'mdeditor',
                 url: '/index/mdeditor'
+              },{
+                id: '9.3',
+                name: 'BingWallpaper',
+                code: 'bingWallpaper',
+                url: '/index/bingWallpaper'
+              },{
+                id: '9.4',
+                name: 'ErrorDel',
+                code: 'errordel',
+                url: '/index/errordel'
               }
             ]
           }

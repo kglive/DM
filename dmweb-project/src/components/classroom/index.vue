@@ -24,12 +24,12 @@
       <!--<div class="tool-item">
         <el-button type="success" size="small" icon="el-icon-search"></el-button>
       </div>-->
-      <div class="tool-item fr">
+      <!--<div class="tool-item fr">
         <el-button title="添加课堂" size="small" type="success" icon="el-icon-plus" circle></el-button>
-      </div>
+      </div>-->
     </div>
     <div class="btn-list-arr">
-      <el-button :disabled="search.classroomid === '' || search.classesid === '' || search.teacherid === ''" type="primary" plain @click="startAttendance">点 名</el-button>
+      <el-button :disabled="search.classroomid === '' || search.classesid === '' || search.teacherid === ''" type="primary" plain @click="startAttendance">创建点名</el-button>
       <el-button :disabled="search.classroomid === '' || search.classesid === '' || search.teacherid === ''" type="primary" plain>课堂记录</el-button>
       <div class="fr dm-class-msg">{{search.classroomid | transformClassroomName(classroomList)}} - {{search.classesid | transformClassName(classesList)}}</div>
     </div>
@@ -38,7 +38,6 @@
         <div class="left-table">
           <el-table
             highlight-current-row
-            :row-class-name="tableRowClassName"
             :data="studentPrevList"
             @current-change="handleTableCurrentChange"
             style="width: 100%" max-height="500">
@@ -48,9 +47,20 @@
             <el-table-column prop="sex" label="Sex" width="50"></el-table-column>
             <el-table-column prop="phone" label="Phone" width="120"></el-table-column>
             <el-table-column prop="qq" label="QQ" width="100"></el-table-column>
-            <el-table-column fixed="right" label="操作" width="120">
+            <el-table-column fixed="right" label="状态" width="120">
               <template slot-scope="scope">
                 <el-button @click.native.prevent="deleteRow(scope.$index, studentPrevList)" type="text" size="small">移除</el-button>
+                <el-tag v-if="scope.row.attendanceStatus === 0">未点名</el-tag>
+                <template v-else>
+                  <el-tag type="success" v-if="scope.row.attendanceValue === 0">到课</el-tag>
+                  <el-tag type="warning" v-if="scope.row.attendanceValue === 1">迟到</el-tag>
+                  <el-tag type="warning" v-if="scope.row.attendanceValue === 2">早退</el-tag>
+                  <el-tag type="danger" v-if="scope.row.attendanceValue === 3">旷课</el-tag>
+                  <el-tag type="info" v-if="scope.row.attendanceValue === 4">请假</el-tag>
+                  <el-tag type="success" v-if="scope.row.attendanceValue === 5">课堂奖励</el-tag>
+                  <el-tag type="danger" v-if="scope.row.attendanceValue === 6">课堂惩罚</el-tag>
+                  <el-tag type="info" v-if="scope.row.attendanceValue === 7">其他</el-tag>
+                </template>
               </template>
             </el-table-column>
           </el-table>
@@ -128,7 +138,8 @@
         studentPrevList: [],
         // 点名数据
         attendance: {
-          title: '点名',
+          whyTitle: '',
+          title: '考勤',
           dialogFormVisible: false,
           value: 0,
           // 正在点名的学生
@@ -217,26 +228,36 @@
       },
       // 开始点名
       startAttendance () {
-        this.attendance.attendanceBefore = shuffle(this.studentList.filter(item => {
-          let isInClass = item.classid === this.search.classesid;
-          // 是否已点过名
-          let isAttendanced = (_ => {
-            let arr = this.attendance.attendanceAfter.filter(jtem => jtem.id === item.id);
-            return !arr.length;
-          })();
-          return isInClass && isAttendanced;
-        }));
-        this.attendance.attendanceing = this.attendance.attendanceBefore.length ? this.attendance.attendanceBefore[0] : null;
-        this.attendance.dialogFormVisible = true;
+        this.$prompt('请输入点名配置', '提示', {
+          confirmButtonText: '开始点名',
+          cancelButtonText: '取消',
+          inputPattern: /\S/,
+          inputErrorMessage: '点名配置信息不能为空'
+        }).then(({ value }) => {
+          this.attendance.whyTitle = value;
+          this.attendance.attendanceBefore = shuffle(this.studentList.filter(item => {
+            let isInClass = item.classid === this.search.classesid;
+            // 是否已点过名
+            let isAttendanced = (_ => {
+              let arr = this.attendance.attendanceAfter.filter(jtem => jtem.id === item.id);
+              return !arr.length;
+            })();
+            return isInClass && isAttendanced;
+          }));
+          this.attendance.attendanceing = this.attendance.attendanceBefore.length ? this.attendance.attendanceBefore[0] : null;
+          this.attendance.dialogFormVisible = true;
+        }).catch(() => {
+          this.$message({ ype: 'info', message: '取消点名' });
+        });
       },
       // 点名弹窗关闭之前的回调
       handleCloseAttendance (done) {
-        this.$confirm('此操作将终止当前的点名, 是否继续?', '提示', {
-          confirmButtonText: '确定',
+        this.$confirm('提交已点名的学生名单, 是否继续?', '提示', {
+          confirmButtonText: '提交',
           cancelButtonText: '取消',
           type: 'warning'
         }).then(() => {
-          // TODO 提交已点名的学生的点名数据
+          this.submitAttendance();
           done();
         }).catch(() => {
           this.$message({ type: 'info', message: '继续当前的点名' });
@@ -306,7 +327,15 @@
         if (index + 1 < this.attendance.attendanceBefore.length) {
           this.attendance.attendanceing = this.attendance.attendanceBefore[index+1];
         } else {
-          this.$message({type: 'info', message: '点名结束了'});
+          this.$confirm('点名结束了, 是否立即提交结果?', '提示', {
+            confirmButtonText: '提交',
+            cancelButtonText: '稍等',
+            type: 'warning'
+          }).then(() => {
+            this.submitAttendance();
+          }).catch(() => {
+            this.$message({ type: 'info', message: '注意：页面刷新，数据会丢失额' });
+          });
         }
       },
       // 上一位切换
@@ -317,6 +346,39 @@
         } else {
           this.$message({type: 'info', message: '已经是第一位了'});
         }
+      },
+      submitAttendance () {
+        const loading = this.$loading({
+          lock: true,
+          text: 'Loading',
+          spinner: 'el-icon-loading',
+          background: 'rgba(0, 0, 0, 0.7)'
+        });
+        let resultList = this.attendance.attendanceAfter.map(item => {
+          return {
+            classroomid: this.search.classroomid,
+            studentid: item.id,
+            studentname: item.name,
+            title: this.attendance.whyTitle,
+            attendanceValue: item.attendanceValue,
+            attendanceStatus: item.attendanceStatus,
+            attendanceMark: item.attendanceMark
+          };
+        });
+        console.log(resultList);
+        this.$http.post('/api/callresult/add', {list: resultList}).then(response => {
+          loading.close();
+          let resData = response.data;
+          if (resData.status === 0) {
+            this.$message({type: 'success', message: resData.message || '考勤成功！'});
+            this.attendance.dialogFormVisible = false;
+          } else {
+            this.$message({type: 'info', message: resData.message || '提交失败！'});
+          }
+        }).catch(error => {
+          loading.close();
+          this.$message({type: 'error', message: '提交失败！'});
+        });
       }
     },
     filters: {
